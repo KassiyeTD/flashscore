@@ -1,32 +1,83 @@
-package database
+package handlers
 //Nurkanat-hub
 import (
 	"context"
-	"log"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"encoding/json"
+	"net/http"
+	"time"
+	"flashscore-backend/database"
+	"flashscore-backend/models"
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-var Client *mongo.Client
+func GetTeamInfo(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	teamID := params["id"]
 
-func ConnectDB() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var team models.Team
+	err := database.Client.Database("flashscore").Collection("teams").FindOne(ctx, bson.M{"_id": teamID}).Decode(&team)
 	if err != nil {
-		log.Fatal("Error connecting to MongoDB:", err)
+		http.Error(w, "Team not found", http.StatusNotFound)
+		return
 	}
 
-	// Verify the connection
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Fatal("MongoDB ping failed:", err)
-	}
-
-	log.Println(" MongoDB connection established successfully")
-	Client = client
+	json.NewEncoder(w).Encode(team)
 }
 
-func GetCollection(collectionName string) *mongo.Collection {
-	return Client.Database("flashscore").Collection(collectionName)
+func GetTeamPlayers(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	teamID := params["id"]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var players []models.Player
+	cursor, err := database.Client.Database("flashscore").Collection("players").Find(ctx, bson.M{"team_id": teamID})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var player models.Player
+		if err := cursor.Decode(&player); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		players = append(players, player)
+	}
+
+	json.NewEncoder(w).Encode(players)
+}
+
+func GetTeamNews(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	teamID := params["id"]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var news []models.NewsArticle
+	cursor, err := database.Client.Database("flashscore").Collection("team_news").Find(ctx, bson.M{"team_id": teamID})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var article models.NewsArticle
+		if err := cursor.Decode(&article); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		news = append(news, article)
+	}
+
+	json.NewEncoder(w).Encode(news)
 }
