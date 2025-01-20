@@ -10,7 +10,6 @@ import (
 
 var Client *mongo.Client
 
-// ConnectDB initializes the MongoDB connection and stores it in the global Client variable
 func ConnectDB() {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(context.TODO(), clientOptions)
@@ -28,7 +27,6 @@ func ConnectDB() {
 	Client = client
 }
 
-// GetCollection returns a reference to the specified collection in the database
 func GetCollection(collectionName string) *mongo.Collection {
 	return Client.Database("flashscore").Collection(collectionName)
 }
