@@ -30,6 +30,3 @@ func ConnectDB() {
 func GetCollection(collectionName string) *mongo.Collection {
 	return Client.Database("flashscore").Collection(collectionName)
 }
-
-
-
