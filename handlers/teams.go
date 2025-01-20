@@ -1,5 +1,5 @@
 package handlers
-//Nurkanay-hub
+//Nurkanat-hub
 import (
 	"context"
 	"encoding/json"
