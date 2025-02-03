@@ -7,46 +7,51 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
 	"github.com/golang-jwt/jwt/v4"
 )
-
-var jwtKey = []byte("my_secret_key")
+var jwtKey = []byte("lKW/hVoH0bRvGLgB/TtRDhjAbJUDV/5x5OFVRO4LmPw=")
 
 type Claims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
-// Authentication Middleware
+// Middleware для проверки JWT-токена
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get JWT token from Authorization header
-		tokenString := r.Header.Get("Authorization")
-		if tokenString == "" {
-			http.Error(w, "Unauthorized: Missing Token", http.StatusUnauthorized)
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Unauthorized: Missing Authorization header", http.StatusUnauthorized)
 			return
 		}
-		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-		// Parse and validate JWT token
+		// Проверка формата "Bearer <token>"
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			http.Error(w, "Unauthorized: Invalid Token format", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := parts[1]
+
+		//  валидация токена
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Unauthorized: Invalid Token", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized: Invalid or expired token", http.StatusUnauthorized)
 			return
 		}
 
-		// Store username in context
+		// Передание  username в контексте
 		ctx := context.WithValue(r.Context(), "username", claims.Username)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// Logging Middleware
+// Middleware для логирования запросов
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[%s] %s %s", time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
@@ -54,7 +59,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// Request Validation Middleware
+// Middleware для проверки валидности JSON-запросов
 func ValidateRequestBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
