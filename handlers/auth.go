@@ -15,22 +15,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
-
 var jwtKey = []byte("lKW/hVoH0bRvGLgB/TtRDhjAbJUDV/5x5OFVRO4LmPw=")
 var userCollection *mongo.Collection
 
-// Initialize MongoDB connection for authentication
+//  Инициализация обработчиков аутентификации
 func InitAuthHandlers() {
-	userCollection = database.Client.Database("flashscore").Collection("users")
-	log.Println("MongoDB connection established for auth handlers")
+	userCollection = database.GetCollection("users")
+	log.Println("✅ MongoDB: подключение к коллекции users установлено")
 }
 
+// Структура для JWT-токена
 type Claims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
-// HashPassword securely hashes the password
+// Функция хэширования пароля
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -39,22 +39,23 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-// CheckPasswordHash securely compares hashed password with the input
+// Функция проверки пароля
 func CheckPasswordHash(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
+// Регистрация пользователя (POST /register)
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Ошибка декодирования JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Hash the password before storing
+	// Хэшируем пароль перед сохранением
 	hashedPassword, err := HashPassword(user.Password)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		http.Error(w, "Ошибка хэширования пароля", http.StatusInternalServerError)
 		return
 	}
 	user.Password = hashedPassword
@@ -64,16 +65,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	_, err = userCollection.InsertOne(ctx, user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка сохранения пользователя", http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("Пользователь успешно зарегистрирован!"))
 }
 
+// Вход пользователя и генерация JWT 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var credentials models.User
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Ошибка декодирования JSON", http.StatusBadRequest)
 		return
 	}
 
@@ -83,16 +87,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := userCollection.FindOne(ctx, bson.M{"username": credentials.Username}).Decode(&user)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "Неверные учетные данные", http.StatusUnauthorized)
 		return
 	}
 
-	// Compare the hashed password with the provided password
+	// Проверяем пароль
 	if !CheckPasswordHash(credentials.Password, user.Password) {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "Неверные учетные данные", http.StatusUnauthorized)
 		return
 	}
 
+	// ✅ Генерация JWT-токена
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		Username: credentials.Username,
@@ -103,79 +108,96 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		http.Error(w, "Ошибка генерации токена", http.StatusInternalServerError)
 		return
 	}
 
+	// Устанавливаем токен в Cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:    "token",
 		Value:   tokenString,
 		Expires: expirationTime,
 	})
-	w.Write([]byte("Login successful"))
+
+	// Отправляем токен в JSON-ответе
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 }
 
+// Получение всех пользователей 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
 	cursor, err := userCollection.Find(ctx, bson.M{})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка получения пользователей", http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
+
 	var users []models.User
 	for cursor.Next(ctx) {
 		var user models.User
 		if err := cursor.Decode(&user); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Ошибка обработки данных пользователя", http.StatusInternalServerError)
 			return
 		}
-		user.Password = "" // Hide password before sending response
+		user.Password = "" 
 		users = append(users, user)
 	}
+
 	json.NewEncoder(w).Encode(users)
 }
 
+// Получение пользователя по ID (GET /users/{id})
 func GetUserByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
 		return
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
 	var user models.User
 	err = userCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "Пользователь не найден", http.StatusNotFound)
 		return
 	}
-	user.Password = "" // Hide password before sending response
+
+	user.Password = "" 
 	json.NewEncoder(w).Encode(user)
 }
 
+// Удаление пользователя по ID (DELETE /users/{id})
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
 		return
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
 	result, err := userCollection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка удаления пользователя", http.StatusInternalServerError)
 		return
 	}
+
 	if result.DeletedCount == 0 {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, " Пользователь не найден", http.StatusNotFound)
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("User deleted successfully"))
+	w.Write([]byte("Пользователь успешно удалён"))
 }
 
 
