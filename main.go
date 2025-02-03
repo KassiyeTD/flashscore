@@ -10,20 +10,22 @@ import (
 )
 
 func main() {
-	
-
-	// Initialize database connection
+	//  Подключение к MongoDB
 	database.ConnectDB()
 
-	// Initialize handlers
+	//  Инициализация обработчиков
 	handlers.InitAuthHandlers()
-	handlers.InitEventHandlers()
+	handlers.InitEventHandlers()  
+	handlers.InitGameHandlers()   
+	handlers.InitLeagueHandlers() 
+	handlers.InitTeamHandlers()   
 
-	// Setup router and routes
+	//  Настройка маршрутизатора
 	router := mux.NewRouter()
 	routes.RegisterRoutes(router)
 
-	log.Println("Server is running on port 8080")
+	// Запуск сервера
+	log.Println(" Сервер запущен на порту 8080...")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
