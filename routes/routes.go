@@ -6,48 +6,42 @@ import (
 	"flashscore-backend/middleware"
 )
 
-// RegisterRoutes sets up the API routes with authentication middleware
+// Регистрация маршрутов API
 func RegisterRoutes(router *mux.Router) {
-	// Apply Logging Middleware globally
+	// Глобальное логирование всех запросов
 	router.Use(middleware.LoggingMiddleware)
 
-	// Authentication routes
+	// Аутентификация
 	router.HandleFunc("/register", handlers.Register).Methods("POST")
 	router.HandleFunc("/login", handlers.Login).Methods("POST")
 
-	// Protected User Management Routes
-	userRouter := router.PathPrefix("/users").Subrouter()
-	userRouter.Use(middleware.AuthMiddleware)
-	userRouter.HandleFunc("", handlers.GetUsers).Methods("GET")
-	userRouter.HandleFunc("/{id}", handlers.GetUserByID).Methods("GET")
-	userRouter.HandleFunc("/{id}", handlers.DeleteUser).Methods("DELETE")
+	// Защищённые маршруты (JWT)
+	protectedRoutes := router.PathPrefix("/").Subrouter()
+	protectedRoutes.Use(middleware.AuthMiddleware)
 
-	// Protected Event Management Routes
-	eventRouter := router.PathPrefix("/events").Subrouter()
-	eventRouter.Use(middleware.AuthMiddleware)
-	eventRouter.HandleFunc("", handlers.GetEvents).Methods("GET")
-	eventRouter.HandleFunc("", handlers.CreateEvent).Methods("POST")
-	eventRouter.HandleFunc("/{id}/complete", handlers.MarkEventAsCompleted).Methods("PUT")
+	// Пользователи
+	protectedRoutes.HandleFunc("/users", handlers.GetUsers).Methods("GET")
+	protectedRoutes.HandleFunc("/users/{id}", handlers.GetUserByID).Methods("GET")
+	protectedRoutes.HandleFunc("/users/{id}", handlers.DeleteUser).Methods("DELETE")
 
+	// События
+	protectedRoutes.HandleFunc("/events", handlers.GetEvents).Methods("GET")
+	protectedRoutes.HandleFunc("/events", handlers.CreateEvent).Methods("POST")
 
-	// League Routes
-	leagueRouter := router.PathPrefix("/leagues").Subrouter()
-	leagueRouter.HandleFunc("/top5", handlers.GetTopLeagues).Methods("GET")
-	leagueRouter.HandleFunc("/{id}/matches", handlers.GetLeagueMatches).Methods("GET")
-	leagueRouter.HandleFunc("/{id}/table", handlers.GetLeagueTable).Methods("GET")
+	// Лиги
+	router.HandleFunc("/leagues", handlers.GetLeagues).Methods("GET")
+	router.HandleFunc("/leagues/{id}/matches", handlers.GetLeagueMatches).Methods("GET")
+	router.HandleFunc("/leagues/{id}/table", handlers.GetLeagueTable).Methods("GET")
 
-	// Team Routes
-	teamRouter := router.PathPrefix("/teams").Subrouter()
-	teamRouter.HandleFunc("/{id}", handlers.GetTeamInfo).Methods("GET")
-	teamRouter.HandleFunc("/{id}/players", handlers.GetTeamPlayers).Methods("GET")
-	teamRouter.HandleFunc("/{id}/news", handlers.GetTeamNews).Methods("GET")
+	// Команды
+	router.HandleFunc("/teams", handlers.GetTeams).Methods("GET")
+	router.HandleFunc("/teams/{id}", handlers.GetTeamByID).Methods("GET")
 
-	// Game Routes
-	gameRouter := router.PathPrefix("/games").Subrouter()
-	gameRouter.HandleFunc("/{id}/statistics", handlers.GetGameStatistics).Methods("GET")
-	gameRouter.HandleFunc("/{id}/lineup", handlers.GetGameLineup).Methods("GET")
-	gameRouter.HandleFunc("/{id}/likes", handlers.LikeGame).Methods("POST")
-	gameRouter.HandleFunc("/popular", handlers.GetPopularGames).Methods("GET")
+	// Игры
+	router.HandleFunc("/games/{id}/statistics", handlers.GetGameStatistics).Methods("GET")
+	router.HandleFunc("/games/{id}/lineup", handlers.GetGameLineup).Methods("GET")
+	router.HandleFunc("/games/{id}/likes", handlers.LikeGame).Methods("POST")
+	router.HandleFunc("/games/popular", handlers.GetPopularGames).Methods("GET")
 }
 
 
