@@ -1,5 +1,5 @@
 package handlers
-//Nurkanat-hub
+
 import (
 	"context"
 	"encoding/json"
@@ -7,79 +7,35 @@ import (
 	"time"
 	"flashscore-backend/database"
 	"flashscore-backend/models"
-	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
+var teamCollection *mongo.Collection
 
-func GetTeamInfo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	teamID := params["id"]
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var team models.Team
-	err := database.Client.Database("flashscore").Collection("teams").FindOne(ctx, bson.M{"_id": teamID}).Decode(&team)
-	if err != nil {
-		http.Error(w, "Team not found", http.StatusNotFound)
-		return
-	}
-
-	json.NewEncoder(w).Encode(team)
+//  Инициализация обработчиков команд
+func InitTeamHandlers() {
+	teamCollection = database.GetCollection("teams")
 }
 
-func GetTeamPlayers(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	teamID := params["id"]
-
+// Получение списка всех команд (GET /teams)
+func GetTeams(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var players []models.Player
-	cursor, err := database.Client.Database("flashscore").Collection("players").Find(ctx, bson.M{"team_id": teamID})
+	cursor, err := teamCollection.Find(ctx, bson.M{})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка получения команд", http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
 
-	for cursor.Next(ctx) {
-		var player models.Player
-		if err := cursor.Decode(&player); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		players = append(players, player)
-	}
-
-	json.NewEncoder(w).Encode(players)
-}
-
-func GetTeamNews(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	teamID := params["id"]
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var news []models.NewsArticle
-	cursor, err := database.Client.Database("flashscore").Collection("team_news").Find(ctx, bson.M{"team_id": teamID})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	var teams []models.Team
+	if err := cursor.All(ctx, &teams); err != nil {
+		http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
 		return
 	}
-	defer cursor.Close(ctx)
 
-	for cursor.Next(ctx) {
-		var article models.NewsArticle
-		if err := cursor.Decode(&article); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		news = append(news, article)
-	}
-
-	json.NewEncoder(w).Encode(news)
+	json.NewEncoder(w).Encode(teams)
 }
 
