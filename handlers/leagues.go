@@ -9,15 +9,38 @@ import (
 	"flashscore-backend/models"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// GetTopLeagues returns the top 5 leagues
-func GetTopLeagues(w http.ResponseWriter, r *http.Request) {
-	topLeagues := []string{"La Liga", "Premier League", "Bundesliga", "Ligue 1", "Serie A"}
-	json.NewEncoder(w).Encode(topLeagues)
+var leagueCollection *mongo.Collection
+
+// Инициализация обработчиков лиг
+func InitLeagueHandlers() {
+	leagueCollection = database.GetCollection("leagues")
 }
 
-// GetLeagueMatches returns matches for a specific league
+// Получение списка всех лиг (GET /leagues)
+func GetLeagues(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := leagueCollection.Find(ctx, bson.M{})
+	if err != nil {
+		http.Error(w, "Ошибка получения лиг", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var leagues []models.League
+	if err := cursor.All(ctx, &leagues); err != nil {
+		http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(leagues)
+}
+
+// Получение матчей определённой лиги (GET /leagues/{id}/matches)
 func GetLeagueMatches(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	leagueID := params["id"]
@@ -25,27 +48,23 @@ func GetLeagueMatches(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var matches []models.Match
-	cursor, err := database.Client.Database("flashscore").Collection("matches").Find(ctx, bson.M{"league_id": leagueID})
+	cursor, err := leagueCollection.Find(ctx, bson.M{"league_id": leagueID})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка получения матчей", http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
 
-	for cursor.Next(ctx) {
-		var match models.Match
-		if err := cursor.Decode(&match); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		matches = append(matches, match)
+	var matches []models.Match
+	if err := cursor.All(ctx, &matches); err != nil {
+		http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
+		return
 	}
 
 	json.NewEncoder(w).Encode(matches)
 }
 
-// GetLeagueTable returns the standings for a league
+// Получение таблицы лиги (GET /leagues/{id}/table)
 func GetLeagueTable(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	leagueID := params["id"]
@@ -53,23 +72,12 @@ func GetLeagueTable(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var standings []models.LeagueTable
-	cursor, err := database.Client.Database("flashscore").Collection("league_tables").Find(ctx, bson.M{"league_id": leagueID})
+	var table models.LeagueTable
+	err := leagueCollection.FindOne(ctx, bson.M{"league_id": leagueID}).Decode(&table)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Таблица лиги не найдена", http.StatusNotFound)
 		return
 	}
-	defer cursor.Close(ctx)
 
-	for cursor.Next(ctx) {
-		var table models.LeagueTable
-		if err := cursor.Decode(&table); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		standings = append(standings, table)
-	}
-
-	json.NewEncoder(w).Encode(standings)
+	json.NewEncoder(w).Encode(table)
 }
-
