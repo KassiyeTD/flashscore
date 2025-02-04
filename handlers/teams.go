@@ -7,13 +7,14 @@ import (
 	"time"
 	"flashscore-backend/database"
 	"flashscore-backend/models"
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var teamCollection *mongo.Collection
 
-//  Инициализация обработчиков команд
+// Инициализация обработчиков команд
 func InitTeamHandlers() {
 	teamCollection = database.GetCollection("teams")
 }
@@ -39,3 +40,20 @@ func GetTeams(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(teams)
 }
 
+// Получение информации о команде по ID (GET /teams/{id})
+func GetTeamByID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	teamID := params["id"]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var team models.Team
+	err := teamCollection.FindOne(ctx, bson.M{"_id": teamID}).Decode(&team)
+	if err != nil {
+		http.Error(w, "Команда не найдена", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(team)
+}
