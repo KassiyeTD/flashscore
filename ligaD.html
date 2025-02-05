@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виртуальная Лига Чемпионов</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background-color: #163053;
+            color: white;
+            margin: 0;
+        }
+        .header, .footer {
+            background-color: #10243e;
+            padding: 15px;
+            text-align: center;
+        }
+        .bracket { 
+            display: flex; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+            padding: 20px;
+        }
+        .round { 
+            margin: 20px; 
+            background-color: #1e3a5f;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .match { 
+            border: 1px solid white; 
+            padding: 10px; 
+            margin: 5px; 
+            border-radius: 5px;
+            background-color: #28527a;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Виртуальная Лига Чемпионов</h1>
+    </div>
+    <div class="bracket" id="bracket"></div>
+    <div class="footer">
+        © 2025 Виртуальная Лига Чемпионов. Все права защищены.
+    </div>
+    <script>
+        class ChampionsLeague {
+            constructor(teams) {
+                this.teams = teams;
+                this.rounds = ["1/8 финала", "1/4 финала", "1/2 финала", "Финал"];
+                this.results = {};
+            }
+
+            playMatch(team1, team2) {
+                let score1 = Math.floor(Math.random() * 4);
+                let score2 = Math.floor(Math.random() * 4);
+                return { team1, score1, team2, score2, winner: score1 >= score2 ? team1 : team2 };
+            }
+
+            playRound(teams, roundName) {
+                let nextRoundTeams = [];
+                this.results[roundName] = [];
+                
+                for (let i = 0; i < teams.length; i += 2) {
+                    let match = this.playMatch(teams[i], teams[i + 1]);
+                    this.results[roundName].push(match);
+                    nextRoundTeams.push(match.winner);
+                }
+                
+                return nextRoundTeams;
+            }
+
+            startTournament() {
+                let currentTeams = [...this.teams];
+                
+                for (let round of this.rounds) {
+                    currentTeams = this.playRound(currentTeams, round);
+                }
+            }
+
+            showResults() {
+                const bracketDiv = document.getElementById("bracket");
+                bracketDiv.innerHTML = "";
+                
+                for (let round in this.results) {
+                    let roundDiv = document.createElement("div");
+                    roundDiv.className = "round";
+                    roundDiv.innerHTML = `<h2>${round}</h2>`;
+                    
+                    this.results[round].forEach(match => {
+                        let matchDiv = document.createElement("div");
+                        matchDiv.className = "match";
+                        matchDiv.innerText = `${match.team1} ${match.score1} - ${match.score2} ${match.team2} | Победитель: ${match.winner}`;
+                        roundDiv.appendChild(matchDiv);
+                    });
+                    
+                    bracketDiv.appendChild(roundDiv);
+                }
+            }
+        }
+
+        const teams = [
+            "Реал Мадрид", "Манчестер Сити", "Бавария", "Барселона", 
+            "Ливерпуль", "Челси", "Интер", "Милан", 
+            "ПСЖ", "Атлетико", "Ювентус", "Боруссия Дортмунд", 
+            "Тоттенхэм", "Лейпциг", "Наполи", "Бенфика"
+        ];
+
+        let league = new ChampionsLeague(teams);
+        league.startTournament();
+        league.showResults();
+    </script>
+</body>
+</html>
