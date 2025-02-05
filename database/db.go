@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"log"
 	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Глобальная переменная для клиента MongoDB
 var Client *mongo.Client
 
 const uri = "mongodb+srv://Nurkanat:Nurkanat05@users.rstbs.mongodb.net/?retryWrites=true&w=majority"
 
-// Функция подключения к MongoDB
 func ConnectDB() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -24,24 +23,22 @@ func ConnectDB() {
 		Password: "Nurkanat05",
 	})
 
-	fmt.Println("Подключение к MongoDB...")
+	fmt.Println("Connecting to MongoDB...")
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Fatalf("Ошибка подключения к MongoDB: %v", err)
+		log.Fatalf("MongoDB connection error: %v", err)
 	}
 
-	// Проверяем соединение
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatalf("Ошибка Ping MongoDB: %v", err)
+		log.Fatalf("Ping MongoDB error: %v", err)
 	}
 
-	fmt.Println("Успешное подключение к MongoDB!")
+	fmt.Println("Successful connection to MongoDB!")
 	Client = client
 }
 
-//  Функция для получения коллекции
 func GetCollection(collectionName string) *mongo.Collection {
 	return Client.Database("flashscore").Collection(collectionName)
 }
