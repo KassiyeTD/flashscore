@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var leagueCollection *mongo.Collection
@@ -24,7 +25,7 @@ func GetLeagues(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cursor, err := leagueCollection.Find(ctx, bson.M{})
+	cursor, err := leagueCollection.Find(ctx, bson.M{}, options.Find().SetProjection(bson.M{"matches": 0, "table": 0})) 
 	if err != nil {
 		http.Error(w, "Ошибка получения лиг", http.StatusInternalServerError)
 		return
@@ -40,6 +41,7 @@ func GetLeagues(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(leagues)
 }
 
+
 // Получение матчей определённой лиги (GET /leagues/{id}/matches)
 func GetLeagueMatches(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
@@ -48,20 +50,16 @@ func GetLeagueMatches(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cursor, err := leagueCollection.Find(ctx, bson.M{"league_id": leagueID})
+	var league struct {
+		Matches []models.Match `bson:"matches"`
+	}
+	err := leagueCollection.FindOne(ctx, bson.M{"_id": leagueID}, options.FindOne().SetProjection(bson.M{"matches": 1, "_id": 0})).Decode(&league)
 	if err != nil {
-		http.Error(w, "Ошибка получения матчей", http.StatusInternalServerError)
-		return
-	}
-	defer cursor.Close(ctx)
-
-	var matches []models.Match
-	if err := cursor.All(ctx, &matches); err != nil {
-		http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
+		http.Error(w, "Матчи не найдены", http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(matches)
+	json.NewEncoder(w).Encode(league.Matches)
 }
 
 // Получение таблицы лиги (GET /leagues/{id}/table)
@@ -72,12 +70,14 @@ func GetLeagueTable(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var table models.LeagueTable
-	err := leagueCollection.FindOne(ctx, bson.M{"league_id": leagueID}).Decode(&table)
+	var league struct {
+		Table []models.TableTeam `bson:"table"`
+	}
+	err := leagueCollection.FindOne(ctx, bson.M{"_id": leagueID}, options.FindOne().SetProjection(bson.M{"table": 1, "_id": 0})).Decode(&league)
 	if err != nil {
 		http.Error(w, "Таблица лиги не найдена", http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(table)
+	json.NewEncoder(w).Encode(league.Table)
 }
