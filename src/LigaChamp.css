@@ -1,0 +1,70 @@
+/* Основной стиль */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #163053;
+    color: white;
+    margin: 0;
+}
+
+.champions-league {
+    text-align: center;
+}
+
+.header,
+.footer {
+    background-color: #10243e;
+    padding: 15px;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.header button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #28527a;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.header button:hover {
+    background-color: #1e3a5f;
+}
+
+/* Турнирная сетка */
+.bracket {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.round {
+    margin: 20px;
+    background-color: #1e3a5f;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.round h2 {
+    margin: 0 0 10px;
+}
+
+.match {
+    border: 1px solid white;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    background-color: #28527a;
+}
+
+/* Футер */
+.footer {
+    margin-top: 20px;
+    font-size: 14px;
+}

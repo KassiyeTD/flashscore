@@ -1,0 +1,67 @@
+/* Основной стиль для страницы League 1 */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #163053;
+}
+
+.ligue1 {
+    text-align: center;
+}
+
+/* Стиль шапки */
+.header {
+    background-color: #10243e;
+    color: white;
+    padding: 15px;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+/* Общий стиль контента */
+.content {
+    padding: 20px;
+}
+
+/* Таблица матчей и статистики */
+.table-container,
+.stats-table {
+    margin-bottom: 40px;
+}
+
+/* Общий стиль таблиц */
+table {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    color: black;
+}
+
+th {
+    background-color: #10243e;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Заголовки секций */
+h2 {
+    color: white;
+}
