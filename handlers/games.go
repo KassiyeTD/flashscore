@@ -4,88 +4,95 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 	"flashscore-backend/database"
-	"flashscore-backend/models"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var gameCollection *mongo.Collection
-
-//  Инициализация обработчиков матчей
+// InitGameHandlers initializes the MongoDB collection for games
 func InitGameHandlers() {
-	gameCollection = database.GetCollection("games")
+	database.GetCollection("games")  // Ensure connection to the 'games' collection
 }
 
-// Получение информации о матче (GET /games/{id}/statistics)
+// GetGameStatistics returns statistics for a specific game by ID
 func GetGameStatistics(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	gameID := params["id"]
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	collection := database.GetCollection("games")
+	ctx := context.Background()
 
-	var game models.Game
-	err := gameCollection.FindOne(ctx, bson.M{"_id": params["id"]}).Decode(&game)
+	var game bson.M
+	err := collection.FindOne(ctx, bson.M{"_id": gameID}).Decode(&game)
 	if err != nil {
-		http.Error(w, "Матч не найден", http.StatusNotFound)
+		http.Error(w, "Game statistics not found", http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(game)
+	if stats, ok := game["statistics"]; ok {
+		json.NewEncoder(w).Encode(stats)
+	} else {
+		http.Error(w, "No statistics available for this game", http.StatusNotFound)
+	}
 }
 
-// Получение состава команд (GET /games/{id}/lineup)
+// GetGameLineup returns the lineup for a specific game by ID
 func GetGameLineup(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	gameID := params["id"]
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	collection := database.GetCollection("games")
+	ctx := context.Background()
 
-	var lineup models.GameLineup
-	err := gameCollection.FindOne(ctx, bson.M{"game_id": gameID}).Decode(&lineup)
+	var game bson.M
+	err := collection.FindOne(ctx, bson.M{"_id": gameID}).Decode(&game)
 	if err != nil {
-		http.Error(w, "Состав не найден", http.StatusNotFound)
+		http.Error(w, "Game lineup not found", http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(lineup)
+	if lineup, ok := game["lineup"]; ok {
+		json.NewEncoder(w).Encode(lineup)
+	} else {
+		http.Error(w, "No lineup available for this game", http.StatusNotFound)
+	}
 }
 
-//  Лайкнуть матч (POST /games/{id}/likes)
+// LikeGame increments the like count for a specific game by ID
 func LikeGame(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	gameID := params["id"]
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	collection := database.GetCollection("games")
+	ctx := context.Background()
 
-	_, err := gameCollection.UpdateOne(ctx, bson.M{"game_id": gameID}, bson.M{"$inc": bson.M{"likes": 1}})
-	if err != nil {
-		http.Error(w, "Ошибка при лайке", http.StatusInternalServerError)
+	update := bson.M{"$inc": bson.M{"likes": 1}}
+	result, err := collection.UpdateOne(ctx, bson.M{"_id": gameID}, update)
+	if err != nil || result.MatchedCount == 0 {
+		http.Error(w, "Unable to like the game", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Матч лайкнут"})
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Game liked successfully"))
 }
 
-//  Получение популярных матчей (GET /games/popular)
+// GetPopularGames returns a list of games sorted by the number of likes
 func GetPopularGames(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	collection := database.GetCollection("games")
+	ctx := context.Background()
 
-	cursor, err := gameCollection.Find(ctx, bson.M{}, nil)
+	cursor, err := collection.Find(ctx, bson.M{}, options.Find().SetSort(bson.M{"likes": -1}))
 	if err != nil {
-		http.Error(w, "Ошибка получения популярных матчей", http.StatusInternalServerError)
+		http.Error(w, "Unable to retrieve popular games", http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
 
-	var games []models.Game
-	if err := cursor.All(ctx, &games); err != nil {
-		http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
+	var games []bson.M
+	if err = cursor.All(ctx, &games); err != nil {
+		http.Error(w, "Error decoding games", http.StatusInternalServerError)
 		return
 	}
 
