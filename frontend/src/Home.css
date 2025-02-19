@@ -1,0 +1,151 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #163053;
+}
+.header {
+    background-color: #10243e;
+    color: white;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.header h1 {
+    font-size: 24px;
+}
+.header .menu {
+    display: flex;
+    gap: 20px;
+}
+.header .menu a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+}
+.lang-selector {
+    display: flex;
+    gap: 10px;
+}
+.lang-selector button {
+    padding: 5px 10px;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.lang-selector button.active {
+    background-color: #10243e;
+    color: white;
+}
+.leagues {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+.league {
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 360px;
+    transition: transform 0.3s;
+    width: 95%;
+    margin: 0 auto;
+    position: relative;
+}
+.league:hover {
+    transform: scale(1.05);
+}
+.league a {
+    text-decoration: none;
+    color: white;
+    display: block;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    line-height: 350px;
+}
+.promo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: #163053;
+    height: 100px;
+    width: 100%;
+    color: #ffffff;
+}
+
+/* Стили для блока Champions League */
+.champions-league {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.champion {
+    display: flex;
+    align-items: center;
+    max-width: 600px;
+    background-color: #10243e;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 10px;
+    text-align: center;
+}
+
+.champion img {
+    width: 60%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.champion h2 {
+    width: 40%;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    text-align: center;
+    padding: 20px;
+    margin-left: 170px;
+}
+
+/* Стили для подвала */
+.footer {
+    background-color: #10243e;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer .links {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.footer .links a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.footer .info {
+    font-size: 14px;
+}
