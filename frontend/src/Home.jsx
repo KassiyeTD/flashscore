@@ -156,7 +156,7 @@ const Home = () => {
 			<div className="footer" id="footer">
 				<div className="links">
 					<a href="https://web.telegram.org/k/">Telegram</a>
-					<a href="https://github.com/KassiyeTD/flashscore">GitHub</a>
+					<a href="https://github.com/KassiyeTD/flashscorefinal.git">GitHub</a>
 					<a href="mailto:renameuser.1991@gmail.com">Email</a>
 				</div>
 				<div className="info">
