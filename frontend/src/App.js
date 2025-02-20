@@ -1,15 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./Home";
-import APL from "./APL";
-import Bundesliga from "./Bundesliga";
-import LaLiga from "./LaLiga";
-import Ligue1 from "./Ligue1";
-import KPL from "./KPL";
-import LigaChamp from "./LigaChamp";
-import LigaA from "./LigaA";
-import Register from './components/Auth/Register';
-import Login from './components/Auth/Login';
+import Home from './Home';
+import APL from "./components/APL";
+import Bundesliga from "./components/Bundesliga";
+import LaLiga from "./components/LaLiga";
+import Ligue1 from "./components/Ligue1";
+import KPL from "./components/KPL";
+import LigaChamp from "./components/LigaChamp";
+import LigaA from "./components/LigaA";
+import Register from './components/Register';
+import Login from './components/Login';
 
 function App() {
 	return (

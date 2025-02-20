@@ -1,0 +1,122 @@
+/* Основной стиль */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #163053;
+}
+
+.app {
+    text-align: center;
+    color: white;
+}
+
+/* Шапка */
+.header {
+    background-color: #10243e;
+    color: white;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Основной контент */
+.content {
+    padding: 20px;
+}
+
+/* Контейнер кнопок */
+.button-container {
+    margin-bottom: 30px;
+    margin-top: 90px;
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Расстояние между кнопками */
+}
+
+/* Кнопки навигации */
+.button-container button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #10243e;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+/* Эффект при наведении */
+.button-container button:hover {
+    background-color: #1b4a80;
+    transform: scale(1.05);
+}
+
+/* Активная кнопка (отображаемая таблица) */
+.button-container button:active {
+    background-color: #0d1f35;
+    transform: scale(1);
+}
+
+/* Контейнер таблицы */
+.table-container {
+    margin-top: 20px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: #10243e;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Заголовки таблицы */
+h2 {
+    color: #7cb3ff;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+/* Таблица */
+.table {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Заголовки колонок */
+th {
+    background-color: #10243e;
+    color: white;
+    font-weight: bold;
+    text-align: left;
+    padding: 12px;
+}
+
+/* Данные таблицы */
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    color: black;
+}
+
+/* Четные строки */
+.row-even {
+    background-color: #f9f9f9;
+}
+
+/* Последняя строка (удаляем границу) */
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .table {
+        width: 100%;
+        font-size: 14px;
+    }
+}

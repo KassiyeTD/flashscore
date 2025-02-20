@@ -29,8 +29,11 @@ func main() {
 	originsOk := cors.AllowedOrigins([]string{"http://localhost:3000"}) // Разрешаем запросы от React
 	methodsOk := cors.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
 
-	// Применяем middleware CORS (Используем gorilla/handlers)
-	handler := cors.CORS(originsOk, headersOk, methodsOk)(router)
+	// Пример настройки CORS в Go
+router.Use(mux.CORSMethodMiddleware(router))
+router.Use(middleware.CORSMiddleware)
+
+
 
 	log.Println("Сервер запущен на порту 8080...")
 	log.Fatal(http.ListenAndServe(":8080", handler)) 
